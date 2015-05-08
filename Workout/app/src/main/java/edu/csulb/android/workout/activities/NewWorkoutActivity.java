@@ -3,6 +3,7 @@ package edu.csulb.android.workout.activities;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
+import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -14,6 +15,7 @@ import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -140,33 +142,38 @@ public class NewWorkoutActivity extends ActionBarActivity implements LoaderManag
 
 	@Override
 	public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
-		if (loader == null || cursor == null || !cursor.moveToFirst()) {
+		if (loader == null || cursor == null) {
 			return;
 		}
 
 		switch (loader.getId()) {
 			case WORKOUT_LOADER_ID:
-				String title = cursor.getString(cursor.getColumnIndex(WorkoutContract.WorkoutsTable.NAME));
-				mWorkoutName.setText(title);
-				setTitle(title);
+				if (cursor.moveToFirst()) {
+					String title = cursor.getString(cursor.getColumnIndex(WorkoutContract.WorkoutsTable.NAME));
+					mWorkoutName.setText(title);
+					setTitle(title);
+				}
 				break;
 
 			case EXERCISES_LOADER_ID:
-				do {
-					final Exercise exercise = new Exercise();
-					exercise.id = cursor.getInt(cursor.getColumnIndex(WorkoutContract.ExercisesColumns.TYPE_ID));
-					exercise.iconResId = cursor.getInt(cursor.getColumnIndex(WorkoutContract.ExercisesColumns.ICON));
-					exercise.name = cursor.getString(cursor.getColumnIndex(WorkoutContract.ExercisesColumns.NAME));
-					exercise.count = cursor.getInt(cursor.getColumnIndex(WorkoutContract.ExercisesColumns.COUNT));
-					mExercises.add(exercise);
-				} while (cursor.moveToNext());
+				if (cursor.moveToFirst()) {
+					do {
+						final Exercise exercise = new Exercise();
+						exercise.id = cursor.getInt(cursor.getColumnIndex(WorkoutContract.ExercisesColumns.TYPE_ID));
+						exercise.iconResId = cursor.getInt(cursor.getColumnIndex(WorkoutContract.ExercisesColumns.ICON));
+						exercise.name = cursor.getString(cursor.getColumnIndex(WorkoutContract.ExercisesColumns.NAME));
+						exercise.count = cursor.getInt(cursor.getColumnIndex(WorkoutContract.ExercisesColumns.COUNT));
+						mExercises.add(exercise);
+					} while (cursor.moveToNext());
 
-				if (mAdapter != null) {
-					mAdapter.setExercises(mExercises);
+					if (mAdapter != null) {
+						mAdapter.setExercises(mExercises);
+					}
 				}
 				break;
 
 			case DEFAULT_EXERCISES_LOADER_ID:
+				cursor.moveToFirst();
 				if (mAdapter == null) {
 					mAdapter = new NewExerciseAdapter(this, cursor);
 					mExercisesList.setAdapter(mAdapter);
@@ -198,14 +205,9 @@ public class NewWorkoutActivity extends ActionBarActivity implements LoaderManag
 				loaderManager.restartLoader(DEFAULT_EXERCISES_LOADER_ID, null, this);
 
 				mNewExerciseName.setText("");
-				/*
-				final List<Exercise> exercises = mAdapter.getExercises();
-				final Exercise exercise = new Exercise();
-				exercise.id = ContentUris.parseId(uri);
-				exercise.name = exerciseName;
-				exercises.add(exercise);
-				mAdapter.setExercises(exercises);
-				*/
+
+				InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+				imm.hideSoftInputFromWindow(mNewExerciseName.getWindowToken(), 0);
 			}
 		}
 	}

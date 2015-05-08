@@ -32,13 +32,15 @@ public class WorkoutActivity extends ActionBarActivity implements LoaderManager.
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_workout);
-
 		getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
 		mExercisesList = (ListView) findViewById(R.id.workout_list);
-
 		mWorkoutId = getIntent().getLongExtra(EXTRA_WORKOUT_ID, -1);
+	}
 
+	@Override
+	protected void onResume() {
+		super.onResume();
 		final LoaderManager loaderManager = getSupportLoaderManager();
 		loaderManager.restartLoader(WORKOUT_LOADER_ID, null, this);
 		loaderManager.restartLoader(EXERCISES_LOADER_ID, null, this);
@@ -64,18 +66,25 @@ public class WorkoutActivity extends ActionBarActivity implements LoaderManager.
 
 	@Override
 	public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
-		if (loader == null || cursor == null || !cursor.moveToFirst()) {
+		if (loader == null || cursor == null) {
 			return;
 		}
 
 		switch (loader.getId()) {
 			case WORKOUT_LOADER_ID:
-				setTitle(cursor.getString(cursor.getColumnIndex(WorkoutContract.WorkoutsTable.NAME)));
+				if (cursor.moveToFirst()) {
+					setTitle(cursor.getString(cursor.getColumnIndex(WorkoutContract.WorkoutsTable.NAME)));
+				}
 				break;
 
 			case EXERCISES_LOADER_ID:
-				mAdapter = new ExerciseAdapter(this, cursor);
-				mExercisesList.setAdapter(mAdapter);
+				cursor.moveToFirst();
+				if (mAdapter == null) {
+					mAdapter = new ExerciseAdapter(this, cursor);
+					mExercisesList.setAdapter(mAdapter);
+				} else {
+					mAdapter.swapCursor(cursor);
+				}
 				break;
 		}
 	}
@@ -101,18 +110,10 @@ public class WorkoutActivity extends ActionBarActivity implements LoaderManager.
 			case R.id.action_edit_workout:
 				final Intent intent = new Intent(this, NewWorkoutActivity.class);
 				intent.putExtra(NewWorkoutActivity.EXTRA_WORKOUT_ID, mWorkoutId);
-				startActivityForResult(intent, 0);
+				startActivity(intent);
 				return true;
 
 		}
 		return super.onOptionsItemSelected(item);
-	}
-
-	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		super.onActivityResult(requestCode, resultCode, data);
-		final LoaderManager loaderManager = getSupportLoaderManager();
-		loaderManager.restartLoader(WORKOUT_LOADER_ID, null, this);
-		loaderManager.restartLoader(EXERCISES_LOADER_ID, null, this);
 	}
 }

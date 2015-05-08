@@ -126,13 +126,5 @@ public class NewExerciseAdapter extends CursorAdapter {
 
 	private void refreshView(ExerciseViewHolder viewHolder, Exercise exercise) {
 		viewHolder.count.setText(String.valueOf(exercise.count));
-
-		/* No worky ;(
-		if (exercise.count > 0) {
-			viewHolder.icon.getDrawable().setColorFilter(0xff009688, PorterDuff.Mode.SRC_ATOP);
-		} else {
-			viewHolder.icon.getDrawable().clearColorFilter();
-		}
-		*/
 	}
 }
